@@ -1,0 +1,57 @@
+# SymLoRA SFT 학습 설정
+# 사용법:
+#   python scripts/train_sft.py                                    # math, standard init
+#   python scripts/train_sft.py init.mode=symmetric                # math, symmetric init
+#   python scripts/train_sft.py init.mode=pissa data.task=code     # code, pissa init
+
+model:
+  name: "unsloth/Llama-3.2-3B"
+  max_seq_length: 1024
+  load_in_4bit: false
+  random_state: 42
+
+  lora_r: 16
+  lora_alpha: 16            # scaling = alpha/r = 1.0
+  lora_dropout: 0.0
+  lora_target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+init:
+  mode: "standard"          # "standard" | "symmetric" | "pissa" | "a_only_svd" | "b_only_svd"
+  freeze_a: false           # true → A gradient 차단, B만 학습
+  residual_b: false         # true → LoRA B 모듈 간 residual connection
+
+data:
+  task: "math"              # math | code | nlu
+  n_samples: 10000
+
+training:
+  output_dir: "outputs/${init.mode}/${data.task}_sft"
+  num_train_epochs: 3
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 5.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  max_grad_norm: 1.0
+  optim: "adamw_8bit"
+  bf16: true
+  logging_steps: 20
+  save_strategy: "epoch"
+  run_name: "${init.mode}_${data.task}_sft"
+
+orthogonal:
+  tau_prev_b_paths: null
+  tau_prev_a_paths: null
+  orth_target: "A"
+  alpha: 0.1
+
+mlflow:
+  tracking_uri: "sqlite:///mlflow.db"
+  experiment_name: "symlora"
