@@ -26,6 +26,7 @@ notes/
 
 # Non-paper code (separate explorations, kept locally)
 EXPERIMENT_DESIGN.md
+paper/
 src/models/residual_lora.py
 src/models/b_network.py
 scripts/train_detached.py
