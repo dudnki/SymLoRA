@@ -1,6 +1,6 @@
 # SymLoRA: SVD 초기화와 A 행렬 동결을 통한 효율적 LoRA 미세조정
 
-KCC 2026 투고 논문 *"SVD 초기화와 A 행렬 동결을 통한 효율적 LoRA 미세조정 (Efficient LoRA Fine-tuning via SVD Initialization and Frozen A Matrix)"* 의 공식 구현체입니다.
+KCC 2026 투고 논문 *"SVD 초기화와 A 행렬 동결을 통한 효율적 LoRA 미세조정.
 
 본 저장소는 LoRA의 두 어댑터 행렬 `A`, `B`를 **사전 학습 가중치 W의 절단 SVD** 로 초기화한 뒤, `A`를 **동결**하고 `B`만 학습하는 단순한 기법(**Frozen-A LoRA**)을 제안합니다. Llama-3.2-3B 기준으로 표준 LoRA 대비 **학습 파라미터를 49% 줄이면서도 GSM8K 정확도를 +3.54%p, HumanEval pass@1을 +1.62%p 향상**시킵니다.
 
@@ -89,7 +89,7 @@ W_rel = ||W_final − Proj_{V_init}(W_final)||_F / ||W_init||_F
 
 1. **Frozen-A는 학습 파라미터를 절반으로 줄이면서도 표준 LoRA 대비 GSM8K +3.54%p, HumanEval +1.62%p 향상.**
 2. **무작위 A를 동결하는 LoRA-FA(33.31%)는 표준 LoRA보다 GSM8K에서 −10.31%p로 크게 뒤처짐.** 동결 자체가 아니라 **무엇을 동결하느냐**가 결정적임을 보여줍니다.
-3. **Frozen-A는 PiSSA(파라미터 2배)와 비교해도 거의 동등한 성능.** A를 학습하는 것이 큰 이득이 없음을 시사합니다.
+3. **Frozen-A는 PiSSA(파라미터 2배)와 비교해도 거의 동등한 성능.** A를 학습하는 것이 큰 이득이 없음을 의미합니다.
 
 ### 3.2 메커니즘 분석 — W_rel 지표 (표 2)
 
