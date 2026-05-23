@@ -60,15 +60,29 @@ for name, module in model.named_modules():
 | Standard LoRA | 11.93M (49.1%) | 12.39M (50.9%) | 24.31M |
 | **Frozen-A (제안)** | **0 (동결)** | 12.39M | **12.39M (−49.0%)** |
 
-### 2.4 Anchor-Freedom 프레임워크와 W_rel 지표
+### 2.4 Anchor-Freedom 프레임워크와 측정 지표
 
-본 연구는 LoRA의 두 행렬을 **anchor (구조 보존)** 와 **freedom (task 적응)** 의 분업으로 해석합니다. 학습 후 가중치 `W_final = W + ΔW` 가 초기 SVD 주성분에서 벗어난 정도를 다음으로 정의합니다.
+본 연구는 LoRA의 두 행렬을 **anchor (구조 보존)** 와 **freedom (task 적응)** 의 분업으로 해석합니다. 학습 후 어댑터 `A_f, B_f`, 초기 어댑터 `A_i, B_i`, 사전학습 가중치 `W`, scaling `s = α/r = 1` 를 사용해 다음 지표들을 정의합니다 ([scripts/anchor_freedom_analysis.py](scripts/anchor_freedom_analysis.py)).
+
+**개별 행렬의 상대 변화량** — 각 어댑터가 초기값에서 얼마나 멀어졌는지.
 
 ```
-W_rel = ||W_final − Proj_{V_init}(W_final)||_F / ||W_init||_F
+rel_A = ||A_f − A_i||_F / ||A_i||_F
+rel_B = ||B_f − B_i||_F / ||B_i||_F
+asym  = rel_B / rel_A        (anchor-freedom 비대칭도)
 ```
 
-`W_rel` 이 0에 가까우면 학습이 주성분 부분공간 안에서만 일어났다는 뜻이고(over-anchored), 1에 가까우면 완전히 새로운 부분공간으로 빠져나갔다는 뜻입니다. 적절한 분업은 그 중간 어디쯤이어야 합니다.
+`rel`이 작은 쪽이 anchor, 큰 쪽이 freedom 역할로 해석됩니다. Frozen-A는 `rel_A = 0`이므로 `asym = ∞` 로 가장 깔끔한 분업입니다.
+
+**유효 가중치 변화 W_rel** — ΔW = sBA 의 학습 전후 변화량을 사전학습 가중치 `W` 로 정규화한 값.
+
+```
+W_rel = ||s·(B_f A_f − B_i A_i)||_F / ||W||_F
+```
+
+즉 "이 LoRA가 W 대비 몇 % 크기의 유효 변화를 만들었는가" 를 나타냅니다. W_rel이 너무 작으면(`PiSSA = 1.34%`) 학습이 주성분 근처를 거의 벗어나지 못한 over-anchored 상태이고, anchor/freedom 분업이 명확할 때 적절한 변화량이 확보됩니다.
+
+모든 지표는 196개 LoRA layer(28층 × 7 모듈) 평균 후 seed 평균입니다.
 
 ---
 
@@ -100,7 +114,7 @@ W_rel = ||W_final − Proj_{V_init}(W_final)||_F / ||W_init||_F
 | B-only SVD | 0.020 | 0.020 | 2.56% | B=anchor, A=freedom |
 | **Frozen-A** | **0.000** | 0.019 | 1.70% | A=anchor 고정, B=freedom (가장 명확한 분업) |
 
-**해석**: PiSSA처럼 양쪽 모두 SVD anchor면 학습이 주성분 영역을 거의 벗어나지 못하고(W_rel=1.34%), 한쪽이 freedom으로 풀려 있을 때 더 넓은 표현을 탐색합니다. Frozen-A는 가장 깔끔한 anchor/freedom 분업으로, 최소 파라미터로 동일 효과를 얻습니다.
+**해석**: PiSSA는 A와 B 둘 다 SVD anchor에 묶여 ΔW의 유효 변화가 W 대비 1.34%에 그칩니다(over-anchored). 한쪽을 freedom으로 풀어주면 W_rel이 2%대로 증가하면서 더 넓은 변화가 일어나고 성능도 개선됩니다. Frozen-A는 `rel_A = 0` 으로 anchor/freedom 분업이 가장 명확하면서도, B 한쪽만 학습해 충분한 W_rel(1.70%)을 확보합니다.
 
 ### 3.3 추가 관찰
 
